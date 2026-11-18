@@ -1,6 +1,6 @@
 <div align="center">
 
-> **Oracle build:** this fork adds a herdr Workspace layout view with Follow Mac, per-oracle agent icons, worktree nesting like herdr's sidebar, and sidebar fixes. See [`oracle/README.md`](oracle/README.md). Upstream: [ZingerLittleBee/Heeler](https://github.com/ZingerLittleBee/Heeler) (Apache-2.0).
+> **This is a fork.** Oracle build of [ZingerLittleBee/Heeler](https://github.com/ZingerLittleBee/Heeler). See [About this fork](#about-this-fork).
 
 <img src="docs/images/logo.png" width="96" alt="Heeler logo" />
 
@@ -27,6 +27,43 @@ English | [简体中文](./README-zh.md)
 ---
 
 Heeler is an independent **herdr mobile client** and agent console for Claude Code, Codex, and other coding Agents on iPhone and iPad. Agents run on your own Hosts with herdr; Heeler connects over SSH. Monitor multiple Agents across machines, sorted by who needs you, then open a live terminal or supported Chat conversation to send instructions.
+
+
+## About this fork
+
+This repository is a fork of [ZingerLittleBee/Heeler](https://github.com/ZingerLittleBee/Heeler)
+at v0.1.17, kept under the same Apache-2.0 licence (see `LICENSE`). The original author's work,
+history and copyright notices are unchanged; this fork only adds to it. It is not affiliated with
+or endorsed by the upstream project, which stays the source of truth for Heeler itself. The App Store and TestFlight badges at the top
+link to upstream's app, not to this build.
+
+**What this build adds**
+
+- **Workspace layout view:** shows a herdr tab's panes at herdr's own split geometry, with a
+  Follow Mac toggle that tracks the Mac's focused workspace and tab.
+- **Oracle icons:** each agent shows its oracle's picture (read from the host over SSH) or a
+  name-derived emoji or monogram, with the program mark kept as a corner badge.
+- **Worktree nesting:** worktree spaces nest under their repo's main space as in herdr's own
+  sidebar, in By Host, All Agents, By Workspace and the layout picker.
+- **Sidebar:** stays open after picking an agent in iPad portrait, highlights the open agent
+  and keeps it centered.
+
+Details, how each piece works and how to build it: [`oracle/README.md`](oracle/README.md).
+Everything specific to this build that is not app source (the icon fetch script, the install
+script, screenshots) lives in `oracle/`.
+
+**Building it yourself:** same as upstream (`make help`). Set your own `DEVELOPMENT_TEAM` and
+bundle id in `project.yml`, run `make generate`, then `oracle/install-ipad.sh <device-id>` for a
+device build. The bundle id and team in the tree are the author's; change them or signing fails.
+
+**CI:** the workflows in `.github/` are upstream's. They need GitHub Actions to be available on
+the account and macOS runners; the release workflow also needs upstream's signing secrets, so
+it will not work here.
+
+**Syncing with upstream:** add `https://github.com/ZingerLittleBee/Heeler` as a remote and merge
+its `main`; the fork's changes sit in a few files under `Sources/Heeler/Console` and `Transport`,
+plus new files and tests. Bugs in Heeler itself belong upstream; bugs in the additions above belong
+in this repository's issues.
 
 ## Screenshots
 
