@@ -70,7 +70,7 @@ struct WeakNetworkProxyControl: Sendable {
     let host: String
     let port: UInt16
 
-    private static let queue = DispatchQueue(label: "dev.bybee.heeler.weak-network-control")
+    private static let queue = DispatchQueue(label: "co.laris.heeler.weak-network-control")
 
     /// Puts a profile in force and proves it landed.
     ///

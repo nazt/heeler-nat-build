@@ -68,6 +68,14 @@ struct ConsoleView: View {
     /// point at.
     @State private var listMenuTitleFrame: CGRect?
     @State private var isStartingTerminal = false
+    /// The Workspace layout view: one herdr Tab's panes in herdr's geometry.
+    @State private var isShowingWorkspaceLayout = {
+        #if DEBUG
+            ProcessInfo.processInfo.arguments.contains("--demo-workspace-layout")
+        #else
+            false
+        #endif
+    }()
     @State private var terminalPresentation = TerminalListPresentationStore()
     /// Where the detail column's navigation bar sits, from the column's top
     /// edge. In regular width it starts just below the status bar; see
@@ -133,7 +141,7 @@ struct ConsoleView: View {
     /// separate from a close, which asks the Host and says so.
     @State private var pendingSavedChatRemoval: ConsoleAgent?
     /// Owns presentation mode and Host/Workspace collapse state.
-    @State private var listPresentation = ConsoleListPresentationStore()
+    @State private var listPresentation = ConsoleListPresentationStore(defaultMode: .byWorkspace)
     /// Outlives the detail column's rebuilds, which is the whole point: it
     /// carries the raised keyboard from one Attach screen to the next.
     @State private var keyboardHandoff = TerminalKeyboardHandoff()
@@ -240,6 +248,28 @@ struct ConsoleView: View {
             pending: $pendingSavedChatRemoval,
             message: savedChatRemovalMessage(for:),
             remove: removeSavedChat))
+        #if DEBUG
+            // Screenshot runs: open an Agent so its row's selection shows.
+            .task {
+                guard ProcessInfo.processInfo.arguments.contains("--demo-select-agent") else { return }
+                try? await Task.sleep(for: .seconds(4))
+                if let agent = console.agents.first(where: { $0.agent.name == "ios-polish" }) {
+                    selectAgent(agent.id)
+                }
+            }
+        #endif
+        .environment(
+            \.oracleIconResolver,
+            { [oracleIcons = console.oracleIcons] in oracleIcons.icon(for: $0) })
+        .fullScreenCover(isPresented: $isShowingWorkspaceLayout) {
+            WorkspaceLayoutView(
+                console: console, hosts: hosts.hosts,
+                onOpen: { terminal in
+                    isShowingWorkspaceLayout = false
+                    selectTerminal(terminal)
+                },
+                onClose: { isShowingWorkspaceLayout = false })
+        }
         .sheet(isPresented: $isStartingTerminal) {
             ConsoleSheetContent(sheetPresentation) { presentation in
                 // NewTerminalView brings its own NavigationStack.
@@ -1058,6 +1088,15 @@ struct ConsoleView: View {
                 presentationMenu(for: tab).hoverEffect(.highlight)
             }
         }
+        if !hosts.hosts.isEmpty, tab.isList {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Workspace Layout", systemImage: "rectangle.split.2x2") {
+                    isShowingWorkspaceLayout = true
+                }
+                .hoverEffect(.highlight)
+                .accessibilityIdentifier("console.workspace-layout")
+            }
+        }
         if usesSidebarNavigation {
             // One item, so the bar sets no gap between the two, and neither
             // folds into its overflow menu without the other: beside a
@@ -1568,16 +1607,36 @@ struct ConsoleView: View {
         case .noSearchResults:
             ContentUnavailableView.search(text: agentSearchText)
         case .rows:
-            List(selection: selectedItem) {
-                switch listPresentation.mode {
-                case .flat: flatAgentListRows
-                case .grouped: groupedAgentListRows
-                case .byWorkspace: workspaceAgentListRows
+            ScrollViewReader { proxy in
+                List(selection: selectedItem) {
+                    switch listPresentation.mode {
+                    case .flat: flatAgentListRows
+                    case .grouped: groupedAgentListRows
+                    case .byWorkspace: workspaceAgentListRows
+                    }
                 }
+                .modifier(ConsoleAgentListStyle(showsCards: listPresentation.mode == .byWorkspace))
+                .modifier(ConsoleSidebarListTint())
+                .searchDrawerStartsTucked()
+                // The row on stage stays in view: opening an Agent, switching
+                // presentation, or a list that changes under it brings its row
+                // back on screen.
+                .onChange(of: notificationRouter.path.last) { _, id in
+                    scrollToActiveRow(id, proxy: proxy)
+                }
+                .onChange(of: listPresentation.mode) { _, _ in
+                    scrollToActiveRow(notificationRouter.path.last, proxy: proxy)
+                }
+                .onAppear { scrollToActiveRow(notificationRouter.path.last, proxy: proxy) }
             }
-            .modifier(ConsoleAgentListStyle(showsCards: listPresentation.mode == .byWorkspace))
-            .modifier(ConsoleSidebarListTint())
-            .searchDrawerStartsTucked()
+        }
+    }
+
+    private func scrollToActiveRow(_ id: ConsoleAgent.ID?, proxy: ScrollViewProxy) {
+        guard let id else { return }
+        // After the list has laid out the new presentation or selection.
+        Task { @MainActor in
+            withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(id, anchor: .center) }
         }
     }
 
@@ -1613,8 +1672,8 @@ struct ConsoleView: View {
         agentHostIssueRows
         let qualifiers = agentTitleQualifiers
         let saved = console.savedChatEntries
-        ForEach(filteredAgents) { @Sendable agent in
-            MainActorContent { agentRow(agent, qualifier: qualifiers[agent.id], saved: saved[agent.id]) }
+        ForEach(AgentRepoNesting.items(filteredAgents)) { @Sendable item in
+            MainActorContent { nestedAgentItem(item, qualifiers: qualifiers, saved: saved) }
         }
     }
 
@@ -1840,8 +1899,8 @@ struct ConsoleView: View {
                             ConsoleHostIssueRow(issue: issue) { openHostIssue($0) }
                                 .listRowSeparator(.hidden)
                         }
-                        ForEach(section.agents) { @Sendable agent in
-                            MainActorContent { agentRow(agent, qualifier: qualifiers[agent.id], saved: saved[agent.id]) }
+                        ForEach(AgentRepoNesting.items(section.agents)) { @Sendable item in
+                            MainActorContent { nestedAgentItem(item, qualifiers: qualifiers, saved: saved) }
                         }
                     }
                 } header: {
@@ -1861,23 +1920,49 @@ struct ConsoleView: View {
         }
     }
 
+    /// A row of the plain lists as herdr's sidebar nests them: a worktree
+    /// space's Agents indented with a branch mark under their repository's
+    /// main space, a repository header over worktrees whose main is not open.
+    @ViewBuilder
+    private func nestedAgentItem(
+        _ item: AgentRepoNesting.Item, qualifiers: [ConsoleAgent.ID: String],
+        saved: [ConsoleAgent.ID: HostReadiness]
+    ) -> some View {
+        switch item {
+        case .header(let repoName, _):
+            Label(repoName, systemImage: "book.closed")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .listRowSeparator(.hidden)
+                .selectionDisabled()
+                .accessibilityAddTraits(.isHeader)
+        case .agent(let agent, let isNested):
+            agentRow(agent, qualifier: qualifiers[agent.id], saved: saved[agent.id], isNested: isNested)
+        }
+    }
+
     /// An Agent's row in the plain lists: no rules between rows, and closer
     /// together than the list would set them, as their marks set them apart.
-    private func agentRow(_ agent: ConsoleAgent, qualifier: String?, saved: HostReadiness?) -> some View {
+    private func agentRow(
+        _ agent: ConsoleAgent, qualifier: String?, saved: HostReadiness?, isNested: Bool = false
+    ) -> some View {
         agentLink(
             agent,
             isSaved: saved != nil,
             background: ConsoleRowSelectionBackground(
                 isSelected: notificationRouter.path.last == agent.id)
         ) {
+            NestedRowLabel(isNested: isNested) {
             AgentCardView(
-                agent: agent,
-                layout: console.rowLayout(for: agent.hostID),
-                isPinned: console.pins.isPinned(
-                    hostID: agent.hostID, paneID: agent.agent.paneID),
-                changes: console.rowChanges.store(for: agent),
-                qualifier: qualifier,
-                saved: saved)
+                    agent: agent,
+                    layout: console.rowLayout(for: agent.hostID),
+                    isPinned: console.pins.isPinned(
+                        hostID: agent.hostID, paneID: agent.agent.paneID),
+                    changes: console.rowChanges.store(for: agent),
+                    qualifier: qualifier,
+                    saved: saved)
+            }
         } preview: {
             AgentCardView(
                 agent: agent,
@@ -1904,6 +1989,7 @@ struct ConsoleView: View {
             label()
                 .modifier(ConsoleRowSelectionContent())
         }
+        .id(agent.id)
         // The list reads what it shows: a row on screen reads its Agent's
         // Checkout, and an exit from Working while none does waits for one.
         .onAppear { console.rowChanges.rowAppeared(agent) }
@@ -2122,7 +2208,7 @@ struct ConsoleView: View {
 
     private var visibleAgentIDs: [ConsoleAgent.ID] {
         switch listPresentation.mode {
-        case .flat: filteredAgents.map(\.id)
+        case .flat: AgentRepoNesting.ordered(filteredAgents).map(\.id)
         case .grouped: hostSections.filter { !$0.isCollapsed }.flatMap { $0.agents.map(\.id) }
         case .byWorkspace: workspaceCards.flatMap(\.visibleAgentIDs)
         }
@@ -3027,6 +3113,30 @@ private struct NavigationBarTopReader: UIViewRepresentable {
                 responder = current.next
             }
             return nil
+        }
+    }
+}
+
+
+/// A nested worktree Agent's row: indented 22 pt with a branch mark. The
+/// indent lives in the row's label, since a row's background must be applied
+/// to the row itself.
+private struct NestedRowLabel<Content: View>: View {
+    let isNested: Bool
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if isNested {
+            HStack(alignment: .center, spacing: 6) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                content
+            }
+            .padding(.leading, 22)
+        } else {
+            content
         }
     }
 }

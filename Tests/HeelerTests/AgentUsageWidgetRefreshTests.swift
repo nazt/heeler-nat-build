@@ -92,7 +92,7 @@ struct AgentUsageWidgetRefreshTests {
 
     @Test func onlyAUsageOrUsageLimitsWidgetCounts() async throws {
         for (kinds, installed) in [
-            ([], false), (["dev.bybee.heeler.other"], false),
+            ([], false), (["co.laris.heeler.other"], false),
             ([UsageWidgetSnapshotStore.usageKind], true), ([UsageWidgetSnapshotStore.limitsKind], true),
         ] as [(Set<String>, Bool)] {
             let (publisher, directory) = try Self.publisher(installed: kinds)

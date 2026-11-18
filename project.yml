@@ -1,6 +1,6 @@
 name: Heeler
 options:
-  bundleIdPrefix: dev.bybee
+  bundleIdPrefix: co.laris
   deploymentTarget:
     iOS: "18.0"
   createIntermediateGroups: true
@@ -11,7 +11,7 @@ settings:
     # Swift 6 language mode implies complete strict concurrency checking.
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    DEVELOPMENT_TEAM: 9VM4RM39R3
+    DEVELOPMENT_TEAM: 6K28WEXX78
     CODE_SIGN_STYLE: Automatic
 
 packages:
@@ -79,33 +79,25 @@ targets:
         # window from it only for a declared type. The generated scene
         # manifest already declares multiple-scene support.
         NSUserActivityTypes:
-          - dev.bybee.heeler.agent
+          - co.laris.heeler.agent
         # The Usage widgets' app refresh task (AgentUsageBackgroundRefresh).
         UIBackgroundModes:
           - fetch
         BGTaskSchedulerPermittedIdentifiers:
-          - dev.bybee.heeler.usage-refresh
+          - co.laris.heeler.usage-refresh
         # `heeler://agent` links (AgentActivityLink). A Live Activity tap
         # opens its own app without this; other apps' links need it.
         CFBundleURLTypes:
-          - CFBundleURLName: dev.bybee.heeler
+          - CFBundleURLName: co.laris.heeler
             CFBundleURLSchemes:
               - heeler
     entitlements:
       path: Sources/Heeler/Heeler.entitlements
-      properties:
-        # Development here covers Debug/local device builds (sandbox APNs);
-        # App Store / TestFlight re-signing flips it to production, so the
-        # APNs environment follows the build configuration (#71).
-        aps-environment: development
-        # Shared with the Notification Service Extension; doubles as the
-        # Keychain access group holding the Notification Keys.
-        com.apple.security.application-groups:
-          - group.dev.bybee.heeler.shared
+      properties: {}   # laris-ipad: no Push / App Groups until the PLA is accepted
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bybee.heeler
+        PRODUCT_BUNDLE_IDENTIFIER: co.laris.heeler
         # Home-screen name; the App Store listing is "Heeler for herdr".
         INFOPLIST_KEY_CFBundleDisplayName: Heeler
         MARKETING_VERSION: "0.1.17"
@@ -148,8 +140,7 @@ targets:
       - package: GhosttyTerminal
       - package: GhosttyTerminal
         product: GhosttyTheme
-      - target: HeelerNotificationService
-      - target: HeelerWidgets
+      # laris-ipad: extensions need App Groups; left out of this build
 
   # Decrypts Agent Notifications before display (ADR 0008, #71). A thin
   # shell: the logic lives in HeelerNotificationCore, tested from the app
@@ -171,7 +162,7 @@ targets:
       path: Sources/HeelerNotificationService/HeelerNotificationService.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.dev.bybee.heeler.shared
+          - group.co.laris.heeler.shared
     info:
       path: Sources/HeelerNotificationService/Info.plist
       properties:
@@ -189,7 +180,7 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bybee.heeler.NotificationService
+        PRODUCT_BUNDLE_IDENTIFIER: co.laris.heeler.NotificationService
         MARKETING_VERSION: "0.1.17"
         CURRENT_PROJECT_VERSION: "38"
         # Match the containing app's iPhone and iPad device family.
@@ -222,7 +213,7 @@ targets:
       path: Sources/HeelerWidgets/HeelerWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.dev.bybee.heeler.shared
+          - group.co.laris.heeler.shared
     info:
       path: Sources/HeelerWidgets/Info.plist
       properties:
@@ -239,7 +230,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bybee.heeler.Widgets
+        PRODUCT_BUNDLE_IDENTIFIER: co.laris.heeler.Widgets
         MARKETING_VERSION: "0.1.17"
         CURRENT_PROJECT_VERSION: "38"
         # Match the containing app's iPhone and iPad device family.
@@ -286,7 +277,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bybee.heeler.tests
+        PRODUCT_BUNDLE_IDENTIFIER: co.laris.heeler.tests
     dependencies:
       - target: Heeler
       - package: HeelerSSH

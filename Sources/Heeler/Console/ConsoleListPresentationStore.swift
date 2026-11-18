@@ -398,6 +398,16 @@ final class ConsoleListPresentationStore {
             for workspaceID in order {
                 if let parent = parent(of: workspaceID) { parentOf[workspaceID] = parent }
             }
+            // A worktree whose main checkout is not open still shows under its
+            // repository, as herdr's sidebar does: a header-only section made
+            // for the repo takes the place of the missing main.
+            var madeHeaderRepoNames: [String: String] = [:]
+            for workspaceID in order where parentOf[workspaceID] == nil {
+                guard let info = checkout(workspaceID), info.isLinkedWorktree else { continue }
+                let headerID = Self.repoHeaderPrefix + info.repoKey
+                parentOf[workspaceID] = headerID
+                madeHeaderRepoNames[headerID] = info.repoName
+            }
             var childrenOf: [String: [String]] = [:]
             for workspaceID in order {
                 if let parent = parentOf[workspaceID] { childrenOf[parent, default: []].append(workspaceID) }
@@ -415,6 +425,12 @@ final class ConsoleListPresentationStore {
 
             func members(_ workspaceID: String) -> [ConsoleAgent] { buckets[workspaceID] ?? [] }
             func section(_ workspaceID: String) -> ConsoleWorkspaceSection {
+                if let repoName = madeHeaderRepoNames[workspaceID] {
+                    let id = ConsoleWorkspaceSection.ID(hostID: host.id, workspaceID: workspaceID)
+                    return ConsoleWorkspaceSection(
+                        id: id, title: repoName, hostName: host.hostDisplayName, agents: [],
+                        isCollapsed: !isSearching && collapsedIDs.contains(id), parentID: nil)
+                }
                 let label = ((allBuckets[workspaceID] ?? []).map(\.workspaceLabel) + [savedByID[workspaceID]?.label])
                     .compactMap { $0 }
                     .first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -451,6 +467,10 @@ final class ConsoleListPresentationStore {
         }
     }
 
+    /// Prefix of the id of a header-only section made for worktrees whose
+    /// main checkout is not open.
+    static let repoHeaderPrefix = "repo:"
+
     func toggleWorkspace(_ id: ConsoleWorkspaceSection.ID) {
         if !collapsedWorkspaceIDs.insert(id).inserted {
             collapsedWorkspaceIDs.remove(id)
@@ -471,11 +491,12 @@ final class ConsoleListPresentationStore {
     // UserDefaults is documented thread-safe; Sendable modulo that promise.
     @ObservationIgnored private nonisolated(unsafe) let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    /// `defaultMode` is what a Console that never chose a presentation shows.
+    init(defaults: UserDefaults = .standard, defaultMode: ConsoleListPresentationMode = .flat) {
         self.defaults = defaults
         mode =
             defaults.string(forKey: Self.modeDefaultsKey)
-            .flatMap(ConsoleListPresentationMode.init(rawValue:)) ?? .flat
+            .flatMap(ConsoleListPresentationMode.init(rawValue:)) ?? defaultMode
         collapsedHostIDs = Set(
             (defaults.stringArray(forKey: Self.collapsedHostsDefaultsKey) ?? [])
                 .compactMap(UUID.init(uuidString:)))
@@ -565,7 +586,7 @@ final class ConsoleListPresentationStore {
             guard filteredHostID == nil || host.id == filteredHostID else { return nil }
             guard projectedHostIDs.insert(host.id).inserted else { return nil }
 
-            let hostAgents = agentsByHost[host.id] ?? []
+            let hostAgents = AgentRepoNesting.ordered(agentsByHost[host.id] ?? [])
             let isAwaitingSnapshot = hostsAwaitingSnapshot.contains(host.id)
             let statusPresentation = ConsoleHostStatusPresentation(
                 host: host,

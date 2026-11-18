@@ -17,7 +17,7 @@ import OSLog
 /// that never returns left every Host Paused after the app came back (#474).
 @MainActor
 struct ConsoleActivityDriver {
-    private static let log = Logger(subsystem: "dev.bybee.heeler", category: "Activity")
+    private static let log = Logger(subsystem: "co.laris.heeler", category: "Activity")
 
     let activity: AppActivityCoordinator
     let console: ConsoleStore

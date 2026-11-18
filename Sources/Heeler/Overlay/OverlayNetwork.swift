@@ -323,9 +323,9 @@ extension OverlayKind {
 }
 
 /// Keychain accounts for Overlay Network secrets, under their own service so
-/// they never mix with Host passwords (`dev.bybee.heeler.ssh`).
+/// they never mix with Host passwords (`co.laris.heeler.ssh`).
 enum OverlaySecretAccount {
-    static let service = "dev.bybee.heeler.overlay"
+    static let service = "co.laris.heeler.overlay"
 
     /// The typed secret for a network: a Tailscale auth key or an EasyTier
     /// network secret. ZeroTier networks have none.

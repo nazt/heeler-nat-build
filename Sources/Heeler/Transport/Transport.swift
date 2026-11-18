@@ -241,6 +241,10 @@ protocol Transport: Sendable {
     /// itself is absent, matching the other plugin-config reads.
     func readSidebarLayout() async throws -> Data?
 
+    /// Reads `icons.json`, the oracle pictures bundle the Host's icon script
+    /// writes beside the plugin's other config; nil when absent.
+    func readOracleIcons() async throws -> Data?
+
     /// Reads the Heeler plugin's entry from herdr's `plugin.list`, under its
     /// current id or a legacy one; nil when neither is installed. Disabled
     /// plugins are still reported. Throws `TransportError.hostFeatureUnavailable`
@@ -512,6 +516,8 @@ extension Transport {
     /// Test doubles and alternative transports without a Host-side plugin
     /// report an absent snapshot rather than emulating the plugin CLI.
     func readSidebarLayout() async throws -> Data? { nil }
+
+    func readOracleIcons() async throws -> Data? { nil }
 
     /// A transport without herdr's plugin registry cannot tell whether the
     /// plugin is installed, which is not the same as reporting it absent.

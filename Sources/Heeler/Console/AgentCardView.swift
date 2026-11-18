@@ -51,6 +51,8 @@ struct AgentCardView: View {
         AgentCardPresentation(agent: agent, layout: layout, hiding: hiddenTokens, leadsWithMark: true)
     }
 
+    @Environment(\.oracleIconResolver) private var oracleIconResolver
+
     private var mark: AgentKindMark { AgentKindMark(kind: agent.agent.kind) }
 
     /// A saved entry has no status of its own, and a status without a title
@@ -111,9 +113,10 @@ struct AgentCardView: View {
         let mark = mark
         let status = saved == nil ? agent.agent.status : .unknown
         let spoken = speaksStatus ? status.displayTitle : nil
-        return AgentStatusAvatar(mark: mark, status: status, diameter: side)
+        let oracle = oracleIconResolver?(agent)
+        return AgentStatusAvatar(mark: mark, status: status, diameter: side, oracle: oracle)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: [mark.label, spoken].compactMap { $0 }.joined(separator: ", ")))
+            .accessibilityLabel(Text(verbatim: [oracle?.name, mark.label, spoken].compactMap { $0 }.joined(separator: ", ")))
     }
 
     /// Row 1, or the heading in its place, with the pin, its right side,

@@ -16,7 +16,7 @@ struct HostCredentialsProvider: Sendable {
     init(
         deviceKeys: DeviceKeyStore = DeviceKeyStore(),
         rsaKeys: RSAKeyStore = RSAKeyStore(),
-        secrets: any SecretStore = KeychainSecretStore(service: "dev.bybee.heeler.ssh")
+        secrets: any SecretStore = KeychainSecretStore(service: "co.laris.heeler.ssh")
     ) {
         self.deviceKeys = deviceKeys
         self.rsaKeys = rsaKeys

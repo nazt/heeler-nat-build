@@ -1352,6 +1352,7 @@ actor HeelerSSHTransport: Transport {
     static let notificationRegistrationFileName = "notifications.json"
     static let notificationConfigFileName = "notify.json"
     static let sidebarLayoutFileName = "sidebar.json"
+    static let oracleIconsFileName = "icons.json"
 
     func readNotificationRegistration() async throws -> Data? {
         try await readPluginConfigFile(named: Self.notificationRegistrationFileName)
@@ -1375,6 +1376,10 @@ actor HeelerSSHTransport: Transport {
 
     func readSidebarLayout() async throws -> Data? {
         try await readPluginConfigFile(named: Self.sidebarLayoutFileName)
+    }
+
+    func readOracleIcons() async throws -> Data? {
+        try await readPluginConfigFile(named: Self.oracleIconsFileName)
     }
 
     func readUsageAccountFile() async throws -> Data? {

@@ -120,6 +120,9 @@ struct AgentStatusAvatar: View {
     let status: AgentStatus
     /// 34 points in a list row, the icon column's width in a card.
     let diameter: CGFloat
+    /// The Agent's oracle, drawn on the disc with the program mark as a
+    /// badge in the corner; nil keeps the program mark on the disc.
+    var oracle: OracleIcon?
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiatesWithoutColor
 
@@ -146,8 +149,20 @@ struct AgentStatusAvatar: View {
             Circle()
                 .fill(Color(uiColor: .tertiarySystemFill))
                 .frame(width: disc, height: disc)
-            AgentKindMarkImage(
-                mark: mark, size: (disc * 0.68).rounded(), monogramSize: disc / 2, isTinted: true)
+            if let oracle {
+                OracleFace(icon: oracle, size: disc)
+                AgentKindMarkImage(
+                    mark: mark, size: (disc * 0.42).rounded(), monogramSize: disc * 0.3,
+                    isTinted: true)
+                    .padding(disc * 0.06)
+                    .background(Color(uiColor: .systemBackground), in: .circle)
+                    .frame(width: disc, height: disc, alignment: .bottomTrailing)
+                    .offset(x: disc * 0.12, y: disc * 0.12)
+            } else {
+                AgentKindMarkImage(
+                    mark: mark, size: (disc * 0.68).rounded(), monogramSize: disc / 2,
+                    isTinted: true)
+            }
             ring
         }
         .frame(width: diameter, height: diameter)
@@ -223,4 +238,43 @@ extension UIColor {
             blue: CGFloat(rgb & 0xFF) / 255,
             alpha: 1)
     }
+}
+
+/// An oracle's picture, or its emoji or monogram on a colour from its name,
+/// clipped to a circle.
+struct OracleFace: View {
+    let icon: OracleIcon
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            switch icon.face {
+            case .picture(let data):
+                if let image = UIImage(data: data) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    glyph(OracleIcon.monogram(for: icon.name), hue: OracleIcon.hue(for: icon.name))
+                }
+            case .glyph(let text, let hue):
+                glyph(text, hue: hue)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(.circle)
+    }
+
+    private func glyph(_ text: String, hue: Double) -> some View {
+        ZStack {
+            Color(hue: hue, saturation: 0.45, brightness: 0.8)
+            Text(verbatim: text)
+                .font(.system(size: size * 0.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// Resolves an Agent's oracle icon; set by the Console, nil elsewhere
+    /// (previews, Settings), where the program mark stays alone.
+    @Entry var oracleIconResolver: (@MainActor (ConsoleAgent) -> OracleIcon?)? = nil
 }

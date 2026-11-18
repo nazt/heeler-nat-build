@@ -68,6 +68,7 @@ struct ConsoleWorkspaceCardRow: ViewModifier {
     private var iconWidth = CardIconWidth()
     @Environment(\.displayScale) private var displayScale
     @Environment(\.isSidebarColumn) private var isSidebarColumn
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.workspaceCardMinRowHeight) private var minRowHeight
 
     init(
@@ -102,7 +103,8 @@ struct ConsoleWorkspaceCardRow: ViewModifier {
                 Metrics.fill(inSidebar: isSidebarColumn)
                     // The selection shows only beside the sidebar, where
                     // the detail stays on stage; see `ConsoleRowSelection`.
-                    .overlay(isSidebarColumn && isSelected ? ConsoleRowSelection.fill : Color.clear)
+                    // Always, at every width: the row on stage stays marked.
+                    .overlay(isSelected ? Color(uiColor: .systemBlue).opacity(0.25) : Color.clear)
                     .overlay(alignment: .top) { rule }
                     .background { if isSidebarColumn { ListRowCellFocusHalo() } })
     }

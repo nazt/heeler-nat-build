@@ -98,7 +98,7 @@ actor OverlayNetworkRuntime {
 
     /// Node stops, which can hang in native code (#474): a "Stopping" line
     /// with no matching "Stopped" is one that never returned.
-    private static let log = Logger(subsystem: "dev.bybee.heeler", category: "Overlay")
+    private static let log = Logger(subsystem: "co.laris.heeler", category: "Overlay")
 
     /// Consecutive start failures of one network revision reported as the
     /// retryable `.notReady` before they become the terminal `.startFailed`.

@@ -407,7 +407,7 @@
                             cwd: "/workspace/product-docs"),
                         agent(
                             paneID: "mobile:p4", status: .done,
-                            workspaceID: "mobile", kind: "gemini",
+                            workspaceID: "main", kind: "gemini",
                             name: "accessibility", title: "Audit VoiceOver labels",
                             cwd: "/workspace/heeler"),
                     ],
@@ -416,6 +416,11 @@
                             id: "mobile", label: "iOS App", repo: "heeler",
                             isLinkedWorktree: true),
                         workspace(id: "docs", label: "Product Docs", repo: "docs-site"),
+                        // The repository's main space, listed after its worktree
+                        // as herdr may: the worktree still nests under it.
+                        workspace(
+                            id: "main", label: "Heeler", repo: "heeler",
+                            repoKey: "/source/heeler/.git"),
                     ],
                     shells: [
                         shell(
@@ -425,7 +430,23 @@
                         shell(
                             paneID: "mobile:p6", workspaceID: "mobile", tab: 3,
                             title: "zsh", cwd: "/Users/developer/workspace/heeler"),
-                    ]),
+                    ],
+                    layouts: [
+                        columnLayout(
+                            workspaceID: "mobile", tabID: "mobile:t1",
+                            panes: ["mobile:p1", "mobile:p6"], ratio: 0.6,
+                            focused: "mobile:p6"),
+                        columnLayout(
+                            workspaceID: "mobile", tabID: "mobile:t2",
+                            panes: ["mobile:p5"], ratio: 1, focused: "mobile:p5"),
+                        columnLayout(
+                            workspaceID: "docs", tabID: "docs:t1",
+                            panes: ["docs:p2"], ratio: 1, focused: "docs:p2"),
+                        columnLayout(
+                            workspaceID: "main", tabID: "main:t1",
+                            panes: ["mobile:p4"], ratio: 1, focused: "mobile:p4"),
+                    ],
+                    focusedWorkspaceID: "mobile", focusedTabID: "mobile:t1"),
                 paneSnippets: [
                     "mobile:p1": "Running AttachViewTests… 24 passed",
                     "docs:p2": "Ready when you are.",
@@ -524,7 +545,7 @@
             """
 
         static func makeDefaults() -> UserDefaults {
-            let suiteName = "dev.bybee.heeler.demo-screenshots.\(UUID().uuidString)"
+            let suiteName = "co.laris.heeler.demo-screenshots.\(UUID().uuidString)"
             return UserDefaults(suiteName: suiteName) ?? UserDefaults()
         }
 
@@ -551,16 +572,55 @@
 
         private static func snapshot(
             agents: [AgentInfo], workspaces: [WorkspaceInfo],
-            shells: [(pane: PaneInfo, tab: TabInfo)] = []
+            shells: [(pane: PaneInfo, tab: TabInfo)] = [],
+            layouts: [PaneLayoutSnapshot] = [],
+            focusedWorkspaceID: String? = nil,
+            focusedTabID: String? = nil
         ) -> SessionSnapshot {
             SessionSnapshot(
                 agents: agents,
-                layouts: [],
+                layouts: layouts,
                 panes: shells.map(\.pane),
                 protocolVersion: 17,
                 tabs: shells.map(\.tab),
                 version: "0.7.5-demo",
-                workspaces: workspaces)
+                workspaces: workspaces,
+                focusedTabID: focusedTabID,
+                focusedWorkspaceID: focusedWorkspaceID)
+        }
+
+        /// A Tab laid out as herdr splits it: panes[0] on the left taking
+        /// `ratio` of the width, the others stacked on the right.
+        private static func columnLayout(
+            workspaceID: String, tabID: String, panes: [String], ratio: Double,
+            focused: String
+        ) -> PaneLayoutSnapshot {
+            let width = 160, height = 48
+            let leftWidth = Int((Double(width) * ratio).rounded())
+            let rest = Array(panes.dropFirst())
+            let rowHeight = height / max(rest.count, 1)
+            var layoutPanes = [
+                PaneLayoutPane(
+                    focused: panes[0] == focused, paneID: panes[0],
+                    rect: PaneLayoutRect(height: height, width: leftWidth, x: 0, y: 0))
+            ]
+            for (index, id) in rest.enumerated() {
+                layoutPanes.append(
+                    PaneLayoutPane(
+                        focused: id == focused, paneID: id,
+                        rect: PaneLayoutRect(
+                            height: index == rest.count - 1 ? height - rowHeight * index : rowHeight,
+                            width: width - leftWidth, x: leftWidth, y: rowHeight * index)))
+            }
+            return PaneLayoutSnapshot(
+                area: PaneLayoutRect(height: height, width: width, x: 0, y: 0),
+                focusedPaneID: focused, panes: layoutPanes,
+                splits: panes.count < 2 ? [] : [
+                    PaneLayoutSplit(
+                        direction: .right, id: "split_0_root", ratio: ratio,
+                        rect: PaneLayoutRect(height: height, width: width, x: 0, y: 0))
+                ],
+                tabID: tabID, workspaceID: workspaceID, zoomed: false)
         }
 
         private static func agent(
@@ -625,7 +685,8 @@
             id: String,
             label: String,
             repo: String,
-            isLinkedWorktree: Bool = false
+            isLinkedWorktree: Bool = false,
+            repoKey: String? = nil
         ) -> WorkspaceInfo {
             let repoRoot = isLinkedWorktree ? "/source/\(repo)" : "/workspace/\(repo)"
             return WorkspaceInfo(
@@ -640,7 +701,7 @@
                 worktree: WorkspaceWorktreeInfo(
                     checkoutPath: "/workspace/\(repo)",
                     isLinkedWorktree: isLinkedWorktree,
-                    repoKey: "\(repoRoot)/.git",
+                    repoKey: repoKey ?? "\(repoRoot)/.git",
                     repoName: repo,
                     repoRoot: repoRoot))
         }
@@ -1626,6 +1687,32 @@
             guard try profile.plugin.get()?.isEnabled == true else {
                 throw NotificationRegistrationError.pluginNotInstalled
             }
+        }
+
+        /// Two drawn pictures (no real avatars); the other demo Agents show
+        /// the name-derived fallback.
+        func readOracleIcons() async throws -> Data? {
+            func picture(_ top: UIColor, _ bottom: UIColor) -> String {
+                let size = CGSize(width: 64, height: 64)
+                let png = UIGraphicsImageRenderer(size: size).pngData { context in
+                    let colors = [top.cgColor, bottom.cgColor] as CFArray
+                    let gradient = CGGradient(
+                        colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+                    context.cgContext.drawLinearGradient(
+                        gradient, start: .zero, end: CGPoint(x: 64, y: 64), options: [])
+                    UIColor.white.withAlphaComponent(0.9).setFill()
+                    UIBezierPath(ovalIn: CGRect(x: 20, y: 18, width: 24, height: 24)).fill()
+                }
+                return png.base64EncodedString()
+            }
+            let bundle: [String: Any] = [
+                "v": 1,
+                "icons": [
+                    "ios-polish": picture(.systemTeal, .systemIndigo),
+                    "reviewer": picture(.systemOrange, .systemPink),
+                ],
+            ]
+            return try JSONSerialization.data(withJSONObject: bundle)
         }
 
         func readNotificationRegistration() async throws -> Data? {

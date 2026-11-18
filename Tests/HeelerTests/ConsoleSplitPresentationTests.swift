@@ -280,16 +280,15 @@ struct ConsoleSplitPresentationTests {
         #expect(state.userVisibility == .all)
     }
 
-    @Test func portraitPickReturnsToTheDetailAlone() {
+    @Test func portraitPickKeepsTheSidebarOpen() {
         var state = ConsoleSplitVisibilityState()
         state.update(from: portrait)
         state.showSidebar()
         #expect(state.isSidebarVisible == true)
         state.selectionDidOpenDetail()
-        #expect(state.visibility == .detailOnly)
-        #expect(state.isSidebarVisible == false)
-        // Not a hide preference: landscape still shows both columns.
-        #expect(state.userVisibility == nil)
+        #expect(state.visibility == .all)
+        #expect(state.isSidebarVisible == true)
+        // Landscape still shows both columns.
         state.update(from: landscape)
         #expect(state.visibility == .all)
     }

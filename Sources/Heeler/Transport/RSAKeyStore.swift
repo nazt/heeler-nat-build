@@ -14,7 +14,7 @@ struct RSAKeyStore: Sendable {
     private let account: String
 
     init(
-        secrets: any SecretStore = KeychainSecretStore(service: "dev.bybee.heeler.ssh"),
+        secrets: any SecretStore = KeychainSecretStore(service: "co.laris.heeler.ssh"),
         account: String = "rsa-private-key"
     ) {
         self.secrets = secrets

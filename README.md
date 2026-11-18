@@ -1,5 +1,7 @@
 <div align="center">
 
+> **Oracle build:** this fork adds a herdr Workspace layout view with Follow Mac, per-oracle agent icons, worktree nesting like herdr's sidebar, and sidebar fixes. See [`oracle/README.md`](oracle/README.md). Upstream: [ZingerLittleBee/Heeler](https://github.com/ZingerLittleBee/Heeler) (Apache-2.0).
+
 <img src="docs/images/logo.png" width="96" alt="Heeler logo" />
 
 # Heeler

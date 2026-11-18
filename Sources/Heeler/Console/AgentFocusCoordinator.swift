@@ -32,7 +32,7 @@ final class AgentFocusCoordinator {
         let transportGeneration: UInt64
     }
 
-    private static let log = Logger(subsystem: "dev.bybee.heeler", category: "AgentFocus")
+    private static let log = Logger(subsystem: "co.laris.heeler", category: "AgentFocus")
     private var target: Target?
     private var generation: UInt64 = 0
     private var attempted = false

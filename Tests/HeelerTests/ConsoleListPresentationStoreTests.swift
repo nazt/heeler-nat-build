@@ -159,7 +159,7 @@ struct ConsoleListPresentationStoreTests {
         #expect(groups.map(\.parentID) == [nil, sid(host, "w16"), nil])
     }
 
-    @Test func worktreeWithoutAMainCheckoutWorkspaceStaysTopLevel() throws {
+    @Test func worktreeWithoutAMainCheckoutNestsUnderARepositoryHeader() throws {
         let (defaults, cleanup) = try makeDefaults()
         defer { cleanup() }
         let host = Host.fixture()
@@ -169,8 +169,16 @@ struct ConsoleListPresentationStoreTests {
         ]
         let groups = ConsoleListPresentationStore(defaults: defaults)
             .workspaceSections(hosts: [host], agents: agents)
-        #expect(groups.map(\.id) == [sid(host, "w22"), sid(host, "w23")])
-        #expect(groups.allSatisfy { $0.parentID == nil })
+        // The repository's main space is not open: a header-only section made
+        // for the repo stands in, and the worktrees nest under it.
+        #expect(groups.count == 3)
+        let header = try #require(groups.first)
+        #expect(header.title == "Food_Safety")
+        #expect(header.agents.isEmpty)
+        #expect(header.parentID == nil)
+        #expect(header.id.workspaceID.hasPrefix(ConsoleListPresentationStore.repoHeaderPrefix))
+        #expect(groups.dropFirst().map(\.id) == [sid(host, "w22"), sid(host, "w23")])
+        #expect(groups.dropFirst().allSatisfy { $0.parentID == header.id })
     }
 
     @Test func worktreesNeverNestAcrossHosts() throws {
@@ -184,8 +192,12 @@ struct ConsoleListPresentationStoreTests {
         ]
         let groups = ConsoleListPresentationStore(defaults: defaults)
             .workspaceSections(hosts: [first, second], agents: agents)
-        #expect(groups.map(\.id) == [sid(first, "wY"), sid(second, "w1J")])
-        #expect(groups.allSatisfy { $0.parentID == nil })
+        // The worktree on Build never nests under Studio's main checkout: it
+        // gets its own repository header on its own Host.
+        #expect(groups.first?.id == sid(first, "wY"))
+        #expect(!groups.contains { $0.parentID == sid(first, "wY") })
+        let header = try #require(groups.first { $0.id.hostID == second.id && $0.agents.isEmpty })
+        #expect(groups.contains { $0.id == sid(second, "w1J") && $0.parentID == header.id })
     }
 
     @Test func collapsedRepositoryCardCountsItsWorktreesAndHidesThem() throws {

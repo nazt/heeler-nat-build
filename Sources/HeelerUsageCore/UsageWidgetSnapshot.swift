@@ -243,8 +243,8 @@ struct UsageWidgetScope: Equatable, Sendable {
 /// The snapshot's file in the app group the widget extension shares.
 struct UsageWidgetSnapshotStore: Sendable {
     /// The kinds the app asks WidgetKit to reload after a write.
-    static let usageKind = "dev.bybee.heeler.usage"
-    static let limitsKind = "dev.bybee.heeler.usage-limits"
+    static let usageKind = "co.laris.heeler.usage"
+    static let limitsKind = "co.laris.heeler.usage-limits"
 
     /// Injectable for tests; the production value is the shared app-group
     /// container.

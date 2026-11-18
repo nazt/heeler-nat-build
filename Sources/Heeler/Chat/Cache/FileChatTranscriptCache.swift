@@ -13,7 +13,7 @@ import OSLog
 actor FileChatTranscriptCache: ChatTranscriptCache {
     static let defaultRoot = URL.cachesDirectory.appending(path: "HeelerChatCache", directoryHint: .isDirectory)
 
-    private static let log = Logger(subsystem: "dev.bybee.heeler", category: "ChatCache")
+    private static let log = Logger(subsystem: "co.laris.heeler", category: "ChatCache")
     private static let versionDirectory = "v1"
 
     private let root: URL

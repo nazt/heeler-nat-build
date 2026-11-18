@@ -23,7 +23,7 @@ final class AttachRestorationTrace {
     }
 
     private static let log = OSLog(
-        subsystem: "dev.bybee.heeler",
+        subsystem: "co.laris.heeler",
         category: "attach-restoration")
 
     private let traceID: String

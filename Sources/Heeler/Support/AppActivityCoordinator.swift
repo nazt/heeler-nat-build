@@ -63,7 +63,7 @@ final class UIKitBackgroundExecutionGranter: BackgroundExecutionGranting {
         onExpiration: @escaping @MainActor @Sendable () -> Void
     ) -> BackgroundExecutionToken? {
         let identifier = UIApplication.shared.beginBackgroundTask(
-            withName: "dev.bybee.heeler.background-grace"
+            withName: "co.laris.heeler.background-grace"
         ) {
             // UIKit calls this synchronously on the main thread and kills the
             // app unless the task has ended by the time it returns, so end

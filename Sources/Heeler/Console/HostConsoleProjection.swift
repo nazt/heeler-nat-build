@@ -15,6 +15,8 @@ final class HostConsoleProjection {
     private(set) var lastKnownAgentsByPane: [String: ConsoleAgent] = [:]
     private(set) var terminalsByPane: [String: ConsoleTerminal] = [:]
     private(set) var workspaces: [ConsoleWorkspace] = []
+    /// Every Tab's pane layout and the Mac's focus, from the last snapshot.
+    private(set) var layoutState = HostLayoutState()
     private(set) var status: EventsSessionStatus?
     /// The failure that last stopped automatic recovery, retained after the
     /// next activation begins and discarded when that activation resolves.
@@ -803,6 +805,7 @@ final class HostConsoleProjection {
         pendingSnippetRefreshes.removeAll(keepingCapacity: true)
         agentsByPane.removeAll(keepingCapacity: true)
         workspaces.removeAll(keepingCapacity: true)
+        layoutState = HostLayoutState()
         workspacesByID.removeAll(keepingCapacity: true)
     }
 
@@ -903,11 +906,13 @@ final class HostConsoleProjection {
         latestPaneChanges.removeAll(keepingCapacity: true)
         terminalsByPane = nextTerminals
         workspacesByID = workspaceByID
+        layoutState = HostLayoutState(snapshot)
         workspaces = snapshot.workspaces.enumerated()
             .map { order, workspace in
                 ConsoleWorkspace(
                     id: workspace.workspaceID, label: workspace.label, order: order,
-                    checkoutPath: workspace.worktree?.checkoutPath)
+                    checkoutPath: workspace.worktree?.checkoutPath,
+                    checkout: workspace.worktree.map(RepositoryCheckout.init))
             }
             .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
         pruneReceiptsReintroducedByCurrentSnapshot(
@@ -1078,6 +1083,9 @@ final class HostConsoleProjection {
         .workspaceCreated, .workspaceRenamed, .workspaceMetadataUpdated, .workspaceClosed,
         .workspaceMoved, .workspaceReordered,
         .tabCreated, .tabClosed, .tabRenamed, .tabMoved, .paneMoved,
+        // The Workspace layout view and its Follow Mac mode read focus and
+        // split geometry from the same snapshot.
+        .workspaceFocused, .tabFocused, .paneFocused, .layoutUpdated,
     ]
 
     private static let resyncEventKinds =

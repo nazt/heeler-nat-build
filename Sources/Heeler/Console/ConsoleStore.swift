@@ -36,6 +36,8 @@ final class ConsoleStore {
     /// than a projection lookup so an open New Agent picker refreshes when a
     /// snapshot arrives or a workspace membership event resyncs the Host.
     private(set) var workspacesByHost: [Host.ID: [ConsoleWorkspace]] = [:]
+    /// Latest pane layouts and Mac focus by Host, for the Workspace view.
+    private(set) var layoutsByHost: [Host.ID: HostLayoutState] = [:]
     /// Successful or snapshot-reconciled removals keyed by the exact Agents
     /// that belonged to the validated worktree. This survives their rows
     /// disappearing so Agent detail can show a stable result.
@@ -111,6 +113,8 @@ final class ConsoleStore {
     let pins: PinnedAgentsStore
     let rowLayouts: AgentRowLayoutStore
     let sidebarSnapshots = HerdrSidebarSnapshotStore()
+    /// Oracle pictures per Host, for the Agent avatars.
+    let oracleIcons = OracleIconStore()
     let pluginStatuses = HeelerPluginStatusStore()
     /// Made on demand while a view reads them, so not observed: each store
     /// is observable itself.
@@ -1107,6 +1111,11 @@ final class ConsoleStore {
         if workspacesByHost != nextWorkspacesByHost {
             workspacesByHost = nextWorkspacesByHost
         }
+        let nextLayoutsByHost = Dictionary(
+            uniqueKeysWithValues: current.map { ($0.host.id, $0.layoutState) })
+        if layoutsByHost != nextLayoutsByHost {
+            layoutsByHost = nextLayoutsByHost
+        }
         let nextRemovedWorktreesByAgent = current.reduce(into: [:]) { result, projection in
             result.merge(projection.removedWorktreesByAgent) { _, latest in latest }
         }
@@ -1121,6 +1130,8 @@ final class ConsoleStore {
             return (projection.host.id, HerdrSidebarSnapshotStore.Connection(
                 generation: generation, revision: projection.sidebarRevision))
         })
+        oracleIcons.reconcile(
+            sidebarConnections.mapValues(\.generation), transports: self)
         sidebarSnapshots.reconcile(sidebarConnections, transports: self) { [weak self] in
             self?.rebuildAgentOrder()
         }

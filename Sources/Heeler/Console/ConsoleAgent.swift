@@ -236,12 +236,19 @@ struct ConsoleWorkspace: Identifiable, Hashable, Sendable {
     /// The snapshot's checkout path, when the workspace reported git
     /// metadata: the one directory the Workspace itself vouches for.
     let checkoutPath: String?
+    /// The git checkout the Workspace reported: its repository (herdr nests
+    /// worktree spaces by `repoKey`) and whether it is a linked worktree.
+    let checkout: RepositoryCheckout?
 
-    init(id: String, label: String, order: Int = Int.max, checkoutPath: String? = nil) {
+    init(
+        id: String, label: String, order: Int = Int.max, checkoutPath: String? = nil,
+        checkout: RepositoryCheckout? = nil
+    ) {
         self.id = id
         self.label = label
         self.order = order
         self.checkoutPath = checkoutPath
+        self.checkout = checkout
     }
 }
 

@@ -63,7 +63,7 @@ enum ChatTextSettings {
 /// every cell and re-measures it on the same path.
 struct ChatFontTrait: UITraitDefinition {
     static let defaultValue = ChatFontOption.system
-    static let identifier = "dev.bybee.heeler.chat-font"
+    static let identifier = "co.laris.heeler.chat-font"
     static let name = "ChatFont"
 }
 

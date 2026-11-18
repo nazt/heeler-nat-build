@@ -7,7 +7,7 @@ import Foundation
 /// when the task runs, from how often the app and its widgets are used.
 @MainActor
 struct AgentUsageBackgroundRefresh {
-    nonisolated static let identifier = "dev.bybee.heeler.usage-refresh"
+    nonisolated static let identifier = "co.laris.heeler.usage-refresh"
     /// The earliest next run after one is scheduled.
     nonisolated static let interval: TimeInterval = 30 * 60
     /// Re-reads while the plugin's worker is refreshing, within the few

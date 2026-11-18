@@ -23,7 +23,7 @@ struct ContentView: View {
     /// Replaced once restoration knows whether this window is new.
     @State private var activation = SceneActivationTracker(isRestored: false)
     /// `AgentRoute.sceneStorageValue`; nil while the window shows the Console.
-    @SceneStorage("dev.bybee.heeler.agentRoute") private var storedRoute: String?
+    @SceneStorage("co.laris.heeler.agentRoute") private var storedRoute: String?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {

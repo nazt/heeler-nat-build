@@ -37,7 +37,14 @@ struct ConsoleSplitPresentation: Equatable {
             defaultVisibility = .all
             sidebarWidth = ColumnWidth(minimum: 320, ideal: 380, maximum: 600)
         } else {
-            defaultVisibility = .detailOnly
+            #if DEBUG
+                // Screenshot runs on a portrait iPad can show the list.
+                defaultVisibility =
+                    ProcessInfo.processInfo.arguments.contains("--demo-show-sidebar")
+                    ? .all : .detailOnly
+            #else
+                defaultVisibility = .detailOnly
+            #endif
             sidebarWidth = ColumnWidth(minimum: 320, ideal: 380, maximum: 600)
         }
     }
@@ -107,18 +114,12 @@ struct ConsoleSplitVisibilityState {
         showSidebar()
     }
 
-    /// A pick from the sidebar that portrait shows only on request returns
-    /// to the detail alone, as a pick on iPhone pushes to it: side by side,
-    /// the terminal would keep only what the sidebar leaves of the width.
-    mutating func selectionDidOpenDetail() {
-        guard let appliedPresentation, appliedPresentation.usesRegularColumns,
-            appliedPresentation.defaultVisibility == .detailOnly,
-            isSidebarVisible == true
-        else { return }
-        visibility = .detailOnly
-        reportedSidebarVisibility = nil
-        userVisibility = nil
-    }
+    /// A pick from the sidebar leaves the sidebar where it is. Upstream
+    /// Heeler hides a sidebar that portrait shows only on request, so the
+    /// terminal keeps the full width; this build keeps the list open (Nat,
+    /// 2026-11-18: the list should not vanish under the tap). Hide it with
+    /// the sidebar button.
+    mutating func selectionDidOpenDetail() {}
 
     private static func sidebarVisibility(for visibility: NavigationSplitViewVisibility) -> Bool? {
         switch visibility {

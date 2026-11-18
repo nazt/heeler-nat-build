@@ -12,25 +12,27 @@ enum ConsoleRowSelection {
     static let fill = Color(uiColor: .tertiarySystemFill)
 }
 
-/// A rounded, inset fill behind a selected sidebar row; nothing elsewhere.
-/// Compact width keeps no persistent selection, so the list's own press
-/// highlight is left alone there.
+/// A rounded, inset fill behind the selected row, at every width.
 struct ConsoleRowSelectionBackground: ViewModifier {
     let isSelected: Bool
-    @Environment(\.isSidebarColumn) private var isSidebarColumn
 
+    /// Always drawn, in every width and column state: the row on stage stays
+    /// marked (Nat, 2026-11-18: always active, never hidden).
     func body(content: Content) -> some View {
-        if isSidebarColumn {
-            let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-            content.listRowBackground(
-                shape
-                    .fill(isSelected ? ConsoleRowSelection.fill : Color.clear)
-                    .background(ListRowFocusHalo(shape: shape))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3))
-        } else {
-            content
-        }
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        content.listRowBackground(
+            shape
+                // The row on stage: a blue wash and edge, clear on the plain
+                // lists' dark page (the gray fill alone is faint).
+                .fill(isSelected ? Color(uiColor: .systemBlue).opacity(0.2) : Color.clear)
+                .overlay {
+                    if isSelected {
+                        shape.strokeBorder(Color(uiColor: .systemBlue).opacity(0.7), lineWidth: 1.5)
+                    }
+                }
+                .background(ListRowFocusHalo(shape: shape))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3))
     }
 }
 
