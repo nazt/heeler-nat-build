@@ -52,6 +52,37 @@ link to upstream's app, not to this build.
 
 Details, how each piece works and how to build it: [`oracle/README.md`](oracle/README.md).
 
+### What it looks like
+
+All screenshots come from the iPad simulator in demo mode (invented agents and hosts only).
+
+**Three list modes** — All Agents, By Host, By Workspace; worktree rows sit under their repo in each, and each
+agent shows its oracle icon (drawn demo pictures and name-derived monograms) with the program mark as a badge:
+
+![All Agents, By Host and By Workspace](oracle/docs/features/01-list-modes.png)
+
+**Workspace layout view** with Follow Mac — a tab's panes at herdr's own split geometry, workspaces on the left
+with worktrees indented under their repo, tabs along the top:
+
+![Workspace layout view](oracle/docs/features/02-layout-view.png)
+
+**Worktree nesting like herdr's sidebar** — By Host (left) and By Workspace (right):
+
+![Worktree nesting](oracle/docs/features/03-worktree-nesting.png)
+
+**The open agent is always marked** (By Workspace left, By Host right):
+
+![Open row highlight](oracle/docs/features/04-open-row-highlight.png)
+
+**iPad portrait** — detail only (left) and the sidebar kept open after picking an agent (right):
+
+![Portrait sidebar](oracle/docs/features/05-portrait-sidebar.png)
+
+**App icon:**
+
+![App icon](oracle/docs/features/06-app-icon.png)
+
+
 **The book:** "แมวบน iPad" (Thai, 72 pages, every command run for real) walks through the whole build:
 [PDF on Google Drive](https://drive.google.com/drive/folders/11ZXuAWnunTQkAxBecoTD2MhLHl0W8RK6).
 Everything specific to this build that is not app source (the icon fetch script, the install
