@@ -32,7 +32,9 @@ Heeler is an independent **herdr mobile client** and agent console for Claude Co
 ## About this fork
 
 This repository is a fork of [ZingerLittleBee/Heeler](https://github.com/ZingerLittleBee/Heeler)
-at v0.1.17, kept under the same Apache-2.0 licence (see `LICENSE`). The original author's work,
+at v0.1.17 (upstream commit `b7846bb7`), kept under the same Apache-2.0 licence (see `LICENSE`). It is a
+standalone repository, not a GitHub fork, so GitHub shows no "forked from" badge; upstream's history up to
+that commit is included unchanged. The original author's work,
 history and copyright notices are unchanged; this fork only adds to it. It is not affiliated with
 or endorsed by the upstream project, which stays the source of truth for Heeler itself. The App Store and TestFlight badges at the top
 link to upstream's app, not to this build.
@@ -49,6 +51,9 @@ link to upstream's app, not to this build.
   and keeps it centered.
 
 Details, how each piece works and how to build it: [`oracle/README.md`](oracle/README.md).
+
+**The book:** "แมวบน iPad" (Thai, 72 pages, every command run for real) walks through the whole build:
+[PDF on Google Drive](https://drive.google.com/drive/folders/11ZXuAWnunTQkAxBecoTD2MhLHl0W8RK6).
 Everything specific to this build that is not app source (the icon fetch script, the install
 script, screenshots) lives in `oracle/`.
 
